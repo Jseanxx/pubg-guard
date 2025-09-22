@@ -151,6 +151,11 @@ class _BanView(discord.ui.View):
                     item.disabled = True
                     item.label = f"Banned by {member.display_name}"
             if emb is not None:
+                try:
+                    # 무지정(기본)로 되돌리기
+                    emb.color = discord.Colour.default()
+                except Exception:
+                    pass
                 await interaction.message.edit(embed=emb, view=self)
             else:
                 await interaction.message.edit(view=self)
@@ -175,11 +180,12 @@ async def emit(client: discord.Client, cfg: Config, kind: EventKind, payload: Lo
             except Exception as e: log.warning("QR 로그 전송 실패(%s): %s", cid, e)
         return
 
-    # 색상 결정: 버튼이 있는 MESSAGE만 빨강, 그 외 임베드는 무색(default)
+    # 색상 결정: 버튼이 있는 MESSAGE는 빨강, 그 외는 기본(무지정)
+    lower_effect = (payload.policy_effect or "").lower()
     show_button = (
         kind == "MESSAGE"
         and cfg.enable_ban_button
-        and (payload.policy_effect or "").lower().find("timeout") != -1
+        and ("timeout" in lower_effect)
     )
     color = (RED if show_button else None)
     emb = _build_avatar_embed(payload, color=color) if kind == "AVATAR" else _build_message_embed(payload, color=color)
