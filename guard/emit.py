@@ -136,11 +136,12 @@ class _BanView(discord.ui.View):
             for item in self.children:
                 if isinstance(item, discord.ui.Button):
                     item.disabled = True
-                    item.label = f"Banned by {interaction.user.display_name}"
+                    item.label = f"Banned by {member.display_name}"
             await interaction.message.edit(view=self)
         except Exception:
             pass
-        return await interaction.followup.send("밴 완료", ephemeral=True)
+        # 성공 시 별도 완료 메시지 전송하지 않음(임베드 라벨로 피드백)
+        return
 
 async def emit(client: discord.Client, cfg: Config, kind: EventKind, payload: LogPayload):
     # 대상 채널 결합
