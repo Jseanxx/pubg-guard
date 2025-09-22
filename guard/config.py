@@ -54,6 +54,9 @@ class Config:
     # Rules
     rules_path: str
     debug: bool
+    # Ban button feature
+    enable_ban_button: bool
+    ban_button_role_ids: list[int]
 
 def load_config() -> Config:
     HERE = Path(__file__).resolve().parent  # ✅ config.py 기준 절대경로
@@ -92,4 +95,6 @@ def load_config() -> Config:
 
         rules_path=os.getenv("RULES_PATH", str(HERE / "rules.json")),
         debug=os.getenv("DEBUG", "0") in {"1","true","True"},
+        enable_ban_button=os.getenv("ENABLE_BAN_BUTTON", "0") in {"1","true","True"},
+        ban_button_role_ids=_parse_id_list(os.getenv("BAN_BUTTON_ROLE_IDS", "")),
     )

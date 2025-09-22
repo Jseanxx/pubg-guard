@@ -7,13 +7,13 @@ export GUILD_ID="1277182620316471347"     # 길드 ID
 export CHANNEL_QR_MONITOR_IDS="1419610175169630270,1419610060971180123"
 # 텍스트 정밀 감시 채널(구인구직1~2, 도움요청 , 미디어)
 export CHANNEL_MSG_MONITOR_IDS="1419610477088079952,1419610494150381568,1419610060971180123,1419610175169630270"
-# 텍스트는 로그만(제재❌) 채널(프리채팅 등)
+# 면책 적용 채널(프리채팅 등): 키워드 근처에 부정/경고 표현 있으면 로그만 처리
 export MSG_EXEMPT_LOG_ONLY_IDS="1419610103879045162"
 
 # --- 로그 채널 ---
 export LOG_QR_CHANNEL_ID="1419681643886809248"     # QR 메인
 export LOG_PHISH_CHANNEL_ID="1419681775419916470"  # 메시지/아바타 메인
-export LOG_SUB_CHANNEL_IDS=""   # 서브(선택)
+export LOG_SUB_CHANNEL_IDS="1419610103879045162"   # 서브(선택): 메인 로그와 동일 알림을 서브 채널에도 동시 전송
 
 # --- 윈도/정책/스위치 ---
 export WINDOW_DAYS="50"                 # 텍스트 정밀 감시: 조인 ≤ N일
@@ -39,3 +39,6 @@ export QR_EXCLUDE_GIF="1"
 
 # --- 기타 ---
 export DEBUG="0"
+export ENABLE_BAN_BUTTON="1"
+# 선택: 버튼 클릭 허용 롤(없으면 ban_members 권한 필요)
+export BAN_BUTTON_ROLE_IDS=""

@@ -35,6 +35,13 @@ def create_bot():
             log.info("아바타 레퍼런스 로드: %d개", n)
         except Exception as e:
             log.warning("레퍼런스 로드 실패: %s", e)
+        # Persistent View 등록 (Ban 버튼)
+        try:
+            if cfg.enable_ban_button:
+                from .emit import _BanView  # type: ignore
+                bot.add_view(_BanView(timeout=None))
+        except Exception as e:
+            log.warning("Ban 버튼 뷰 등록 실패: %s", e)
 
     @bot.event
     async def on_message(msg: discord.Message):

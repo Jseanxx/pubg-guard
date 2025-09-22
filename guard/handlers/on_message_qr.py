@@ -1,6 +1,6 @@
 # guard/handlers/on_message_qr.py
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 import discord
 
@@ -49,8 +49,26 @@ async def handle_message_qr(
         if not texts:
             continue
 
-        # 정책 적용(즉시)
-        effect = await apply_policy("QR", msg, tier=None, cfg=cfg, state=state)
+        # 조인≤WINDOW_DAYS 일자 가드: 윈도우 밖이면 제재 스킵하고 로그만
+        member = msg.author if isinstance(msg.author, discord.Member) else None
+        if (not member) and msg.guild:
+            try:
+                member = msg.guild.get_member(msg.author.id) or await msg.guild.fetch_member(msg.author.id)
+            except Exception:
+                member = None
+
+        do_enforce = False
+        try:
+            if member and getattr(member, "joined_at", None):
+                do_enforce = (now_utc() - member.joined_at) <= timedelta(days=cfg.window_days)
+        except Exception:
+            do_enforce = False
+
+        if do_enforce:
+            effect = await apply_policy("QR", msg, tier=None, cfg=cfg, state=state)
+        else:
+            effect = "Log (old-member)"
+
         payload = LogPayload(
             guild_id=msg.guild.id,
             user_id=msg.author.id,

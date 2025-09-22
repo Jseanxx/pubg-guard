@@ -1,7 +1,7 @@
 # guard/emit.py
 import logging
 from datetime import datetime, timezone, timedelta
-from typing import Iterable
+from typing import Iterable, Optional
 
 import discord
 from .schemas import EventKind, LogPayload
@@ -74,6 +74,74 @@ def _build_message_embed(p: LogPayload) -> discord.Embed:
         emb.url = p.jump_url
     return emb
 
+class _BanView(discord.ui.View):
+    def __init__(self, *, timeout: Optional[float] = None):
+        super().__init__(timeout=timeout)
+
+    @discord.ui.button(label="Ban", style=discord.ButtonStyle.danger, custom_id="guard:ban")
+    async def ban_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.defer(ephemeral=True)
+        client: discord.Client = interaction.client
+        guild = interaction.guild or (client.get_guild(interaction.guild_id) if interaction.guild_id else None)
+        if not guild:
+            return await interaction.followup.send("길드 조회 실패", ephemeral=True)
+
+        # 권한 체크: ban_members 또는 환경변수 롤
+        member = guild.get_member(interaction.user.id) or await guild.fetch_member(interaction.user.id)
+        if not member:
+            return await interaction.followup.send("멤버 조회 실패", ephemeral=True)
+        can_ban = getattr(member.guild_permissions, "ban_members", False)
+        cfg = getattr(client, "_guard_cfg", None)
+        if cfg and (cfg.ban_button_role_ids and not can_ban):
+            can_ban = any(r.id in set(cfg.ban_button_role_ids) for r in (member.roles or []))
+        if not can_ban:
+            return await interaction.followup.send("권한 없음", ephemeral=True)
+
+        # 대상 사용자 ID를 임베드에서 추출(ID 필드 또는 설명 mention에서 파싱)
+        target_user_id: Optional[int] = None
+        try:
+            emb = (interaction.message.embeds or [None])[0]
+            if emb:
+                # ID 필드 찾기
+                for f in (emb.fields or []):
+                    if (f.name or "").strip().upper() == "ID":
+                        s = (f.value or "").strip()
+                        if s.isdigit():
+                            target_user_id = int(s)
+                            break
+        except Exception:
+            target_user_id = None
+        if not target_user_id:
+            return await interaction.followup.send("대상 ID 파싱 실패", ephemeral=True)
+
+        # 중복 방지 (best-effort): (guild_id, user_id, message_id)
+        st = getattr(client, "_guard_state", None)
+        if st:
+            key = (guild.id, target_user_id, interaction.message.id)
+            exp = st.caches.ban_action_exp.get(key, 0)
+            now = now_utc().timestamp()
+            if exp and exp > now:
+                return await interaction.followup.send("이미 처리 중이거나 완료됨", ephemeral=True)
+            st.caches.ban_action_exp[key] = now + 300
+
+        # Ban 시도 (유저가 나갔어도 ID ban 가능)
+        try:
+            target = guild.get_member(target_user_id) or discord.Object(id=target_user_id)
+            await guild.ban(target, reason=f"Manual ban via button by {interaction.user}")
+        except Exception as e:
+            return await interaction.followup.send(f"밴 실패: {e}", ephemeral=True)
+
+        # 버튼 비활성화
+        try:
+            for item in self.children:
+                if isinstance(item, discord.ui.Button):
+                    item.disabled = True
+                    item.label = f"Banned by {interaction.user.display_name}"
+            await interaction.message.edit(view=self)
+        except Exception:
+            pass
+        return await interaction.followup.send("밴 완료", ephemeral=True)
+
 async def emit(client: discord.Client, cfg: Config, kind: EventKind, payload: LogPayload):
     # 대상 채널 결합
     mains = [cfg.log_qr_channel_id] if kind == "QR" else [cfg.log_phish_channel_id]
@@ -93,5 +161,14 @@ async def emit(client: discord.Client, cfg: Config, kind: EventKind, payload: Lo
     emb = _build_avatar_embed(payload) if kind == "AVATAR" else _build_message_embed(payload)
     for cid in targets:
         ch = client.get_channel(cid) or await client.fetch_channel(cid)
-        try: await ch.send(embed=emb, allowed_mentions=ALLOW_NONE)
+        try:
+            view = None
+            if (
+                kind == "MESSAGE"
+                and cfg.enable_ban_button
+                and (payload.policy_effect or "").lower().find("timeout") != -1
+            ):
+                # delete_timeout/timeout 케이스에만 버튼 제공
+                view = _BanView(timeout=None)  # persistent
+            await ch.send(embed=emb, allowed_mentions=ALLOW_NONE, view=view)
         except Exception as e: log.warning("%s 로그 전송 실패(%s): %s", kind, cid, e)

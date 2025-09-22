@@ -30,6 +30,8 @@ class Caches:
     last_avatar_key: dict[int, Optional[str]] = field(default_factory=dict)
     suspect_by_avatar: set[int] = field(default_factory=set)
     first_msg_seen: set[int] = field(default_factory=set)
+    # Ban button idempotency: (guild_id, user_id, log_msg_id) -> exp_ts
+    ban_action_exp: dict[tuple[int,int,int], float] = field(default_factory=dict)
 
 @dataclass
 class Counters:

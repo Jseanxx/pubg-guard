@@ -151,8 +151,19 @@ async def handle_thread_create(
         if not texts:
             continue
 
-        # QR 정책 적용(즉시)
-        effect = await apply_policy("QR", starter, tier=None, cfg=cfg, state=state)
+        # QR 정책 적용: 조인≤WINDOW_DAYS일 때만 제재, 아니면 로그만
+        do_enforce = False
+        try:
+            owner = await _resolve_owner(thread)
+            if owner and getattr(owner, "joined_at", None):
+                do_enforce = (now_utc() - owner.joined_at) <= timedelta(days=cfg.window_days)
+        except Exception:
+            do_enforce = False
+
+        if do_enforce:
+            effect = await apply_policy("QR", starter, tier=None, cfg=cfg, state=state)
+        else:
+            effect = "Log (old-member)"
         payload = LogPayload(
             guild_id=thread.guild.id, user_id=starter.author.id, mention=starter.author.mention,
             channel_mention=getattr(thread.parent, "mention", None),
