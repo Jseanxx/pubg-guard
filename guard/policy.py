@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Literal
 import discord
 
-from .types import EventKind, Tier
+from .schemas import EventKind, Tier
 from .config import Config
 from .state import State
 

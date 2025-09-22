@@ -4,7 +4,7 @@ from datetime import datetime, timezone, timedelta
 from typing import Iterable
 
 import discord
-from .types import EventKind, LogPayload
+from .schemas import EventKind, LogPayload
 from .config import Config
 
 log = logging.getLogger("guard.emit")

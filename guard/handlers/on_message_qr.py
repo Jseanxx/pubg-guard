@@ -7,7 +7,7 @@ import discord
 from ..config import Config
 from ..rules import Rules
 from ..state import State
-from ..types import LogPayload
+from ..schemas import LogPayload
 from ..emit import emit
 from ..policy import apply_policy
 from ..detectors.qr import is_scannable_attachment, detect_qr_bytes, obfuscate

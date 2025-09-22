@@ -5,7 +5,7 @@ from datetime import datetime, timezone, timedelta
 
 import discord
 
-from ..types import LogPayload
+from ..schemas import LogPayload
 from ..config import Config
 from ..rules import Rules
 from ..state import State

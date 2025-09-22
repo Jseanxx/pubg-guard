@@ -5,7 +5,7 @@ from typing import Optional
 
 import discord
 
-from ..types import LogPayload, EventKind, Tier
+from ..schemas import LogPayload, EventKind, Tier
 from ..config import Config
 from ..rules import Rules
 from ..state import State, norm_hash

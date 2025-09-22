@@ -1,4 +1,3 @@
-# guard/types.py
 from dataclasses import dataclass
 from typing import Optional, Literal, List
 from datetime import datetime
@@ -26,3 +25,5 @@ class LogPayload:
     hits: Optional[List[str]] = None
     preview: Optional[str] = None
     jump_url: Optional[str] = None
+
+
