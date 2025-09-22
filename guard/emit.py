@@ -10,6 +10,7 @@ from .config import Config
 log = logging.getLogger("guard.emit")
 UTC = timezone.utc
 KST = timezone(timedelta(hours=9))
+RED = discord.Color.from_str("#DC2626")
 
 def now_utc() -> datetime: return datetime.now(UTC)
 def fmt_kst(dt: datetime | None) -> str:
@@ -32,8 +33,10 @@ def _pad3(emb: discord.Embed, n: int):
     for _ in range(n):
         emb.add_field(name=BLANK, value=BLANK, inline=True)
 
-def _build_avatar_embed(p: LogPayload) -> discord.Embed:
-    emb = discord.Embed(title="[프로필 사진 탐지]", color=discord.Color.green(), timestamp=now_utc())
+def _build_avatar_embed(p: LogPayload, color: Optional[discord.Color] = None) -> discord.Embed:
+    emb = discord.Embed(title="[프로필 사진 탐지]", timestamp=now_utc())
+    if color is not None:
+        emb.color = color
     if p.avatar_url_256:
         try: emb.set_thumbnail(url=p.avatar_url_256)
         except Exception: pass
@@ -47,8 +50,10 @@ def _build_avatar_embed(p: LogPayload) -> discord.Embed:
     _pad3(emb, 1)
     return emb
 
-def _build_message_embed(p: LogPayload) -> discord.Embed:
-    emb = discord.Embed(title="[피싱 메시지 의심]", color=discord.Color.from_str("#DC2626"), timestamp=now_utc())
+def _build_message_embed(p: LogPayload, color: Optional[discord.Color] = None) -> discord.Embed:
+    emb = discord.Embed(title="[피싱 메시지 의심]", timestamp=now_utc())
+    if color is not None:
+        emb.color = color
     if p.avatar_url_256:
         try: emb.set_thumbnail(url=p.avatar_url_256)
         except Exception: pass
@@ -159,17 +164,17 @@ async def emit(client: discord.Client, cfg: Config, kind: EventKind, payload: Lo
             except Exception as e: log.warning("QR 로그 전송 실패(%s): %s", cid, e)
         return
 
-    emb = _build_avatar_embed(payload) if kind == "AVATAR" else _build_message_embed(payload)
+    # 색상 결정: 버튼이 있는 MESSAGE만 빨강, 그 외 임베드는 무색(default)
+    show_button = (
+        kind == "MESSAGE"
+        and cfg.enable_ban_button
+        and (payload.policy_effect or "").lower().find("timeout") != -1
+    )
+    color = (RED if show_button else None)
+    emb = _build_avatar_embed(payload, color=color) if kind == "AVATAR" else _build_message_embed(payload, color=color)
     for cid in targets:
         ch = client.get_channel(cid) or await client.fetch_channel(cid)
         try:
-            view = None
-            if (
-                kind == "MESSAGE"
-                and cfg.enable_ban_button
-                and (payload.policy_effect or "").lower().find("timeout") != -1
-            ):
-                # delete_timeout/timeout 케이스에만 버튼 제공
-                view = _BanView(timeout=None)  # persistent
+            view = _BanView(timeout=None) if show_button else None
             await ch.send(embed=emb, allowed_mentions=ALLOW_NONE, view=view)
         except Exception as e: log.warning("%s 로그 전송 실패(%s): %s", kind, cid, e)
