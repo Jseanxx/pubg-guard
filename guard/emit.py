@@ -136,13 +136,24 @@ class _BanView(discord.ui.View):
         except Exception as e:
             return await interaction.followup.send(f"밴 실패: {e}", ephemeral=True)
 
-        # 버튼 비활성화
+        # 버튼 비활성화 + 임베드 색상 무색으로 변경
         try:
+            # 임베드 색상 제거(기본값)
+            emb = None
+            if interaction.message.embeds:
+                emb = interaction.message.embeds[0]
+                try:
+                    emb.color = discord.Colour.default()
+                except Exception:
+                    pass
             for item in self.children:
                 if isinstance(item, discord.ui.Button):
                     item.disabled = True
                     item.label = f"Banned by {member.display_name}"
-            await interaction.message.edit(view=self)
+            if emb is not None:
+                await interaction.message.edit(embed=emb, view=self)
+            else:
+                await interaction.message.edit(view=self)
         except Exception:
             pass
         # 성공 시 별도 완료 메시지 전송하지 않음(임베드 라벨로 피드백)
