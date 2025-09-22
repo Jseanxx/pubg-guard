@@ -25,7 +25,8 @@
 
   "sensitivity": {
     "near_window": 12,
-    "msg_threshold_normal": 60
+    "msg_threshold_normal": 60,
+    "repeat_min_score": 60
   },
 
   "policy": {

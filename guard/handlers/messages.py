@@ -153,12 +153,14 @@ async def handle_message(
     # if not tier and profile_visit_in_reasons(reasons):
     #     tier = "STRICT"; strict_due_to = "profile_visit"
 
-    # 3-c) 반복/크로스포스트 (10분 내 2회 또는 다채널)
+    # 3-c) 반복/크로스포스트 (10분 내 2회 또는 다채널) — 선행 점수 가드 적용
     if not tier:
-        sig = text_signature(msg.content or "", rules)
-        cnt, chs = _bump_repeat(state, msg.author.id, sig, getattr(msg.channel, "id", 0), int(rules.repeat_window_sec))
-        if cnt >= 2 or chs >= 2:
-            tier = "STRICT"; strict_due_to = f"repeat({cnt})/cross({chs})"
+        repeat_min_score = int((rules.sensitivity or {}).get("repeat_min_score", 60))
+        if score >= repeat_min_score:
+            sig = text_signature(msg.content or "", rules)
+            cnt, chs = _bump_repeat(state, msg.author.id, sig, getattr(msg.channel, "id", 0), int(rules.repeat_window_sec))
+            if cnt >= 2 or chs >= 2:
+                tier = "STRICT"; strict_due_to = f"repeat({cnt})/cross({chs})"
 
     # 3-d) 아바타 pHash 온디맨드 (키워드 히트 & 닉 미적용일 때만)
     if not tier:
