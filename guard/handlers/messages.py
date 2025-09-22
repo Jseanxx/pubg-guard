@@ -149,9 +149,9 @@ async def handle_message(
     if nick_flag(getattr(member, "display_name", "") or getattr(msg.author, "display_name", ""), rules):
         tier = "STRICT"; strict_due_to = "nick-flag"
 
-    # 3-b) profile_visit 조합
-    if not tier and profile_visit_in_reasons(reasons):
-        tier = "STRICT"; strict_due_to = "profile_visit"
+    # 3-b) profile_visit 조합 → STRICT 승격 제거 (점수에만 반영)
+    # if not tier and profile_visit_in_reasons(reasons):
+    #     tier = "STRICT"; strict_due_to = "profile_visit"
 
     # 3-c) 반복/크로스포스트 (10분 내 2회 또는 다채널)
     if not tier:

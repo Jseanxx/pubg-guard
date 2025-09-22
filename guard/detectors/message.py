@@ -3,7 +3,7 @@ import re
 import unicodedata
 from typing import List, Tuple
 
-from .rules import Rules
+from ..rules import Rules
 
 ZERO_WIDTH = re.compile(r"[\u200B\u200C\u200D\u2060\uFEFF]")
 NONWORD    = re.compile(r"[^0-9A-Za-z가-힣]+")

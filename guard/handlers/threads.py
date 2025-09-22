@@ -79,9 +79,8 @@ async def handle_thread_create(
                 # STRICT 여부
                 tier = None
                 strict_due = None
-                if profile_visit_in_reasons(reasons):
-                    tier = "STRICT"; strict_due = "profile_visit"
-                elif score >= int(rules.sensitivity.get("msg_threshold_normal", 60)):
+                # profile_visit 조합으로 STRICT 승격 제거 (점수 기반만)
+                if score >= int(rules.sensitivity.get("msg_threshold_normal", 60)):
                     tier = "NORMAL"
 
                 if tier:
