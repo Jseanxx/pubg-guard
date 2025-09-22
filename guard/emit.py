@@ -11,6 +11,7 @@ log = logging.getLogger("guard.emit")
 UTC = timezone.utc
 KST = timezone(timedelta(hours=9))
 RED = discord.Color.from_str("#DC2626")
+GREY = discord.Color.from_str("#d9d9dc")
 
 def now_utc() -> datetime: return datetime.now(UTC)
 def fmt_kst(dt: datetime | None) -> str:
@@ -143,7 +144,7 @@ class _BanView(discord.ui.View):
             if interaction.message.embeds:
                 emb = interaction.message.embeds[0]
                 try:
-                    emb.color = discord.Colour.default()
+                    emb.color = GREY
                 except Exception:
                     pass
             for item in self.children:
@@ -153,7 +154,7 @@ class _BanView(discord.ui.View):
             if emb is not None:
                 try:
                     # 무지정(기본)로 되돌리기
-                    emb.color = discord.Colour.default()
+                    emb.color = GREY
                 except Exception:
                     pass
                 await interaction.message.edit(embed=emb, view=self)
