@@ -11,7 +11,7 @@ log = logging.getLogger("guard.emit")
 UTC = timezone.utc
 KST = timezone(timedelta(hours=9))
 RED = discord.Color.from_str("#DC2626")
-GREY = discord.Color.from_str("#d9d9dc")
+GREY = discord.Color.from_str("#3b3b41")
 
 def now_utc() -> datetime: return datetime.now(UTC)
 def fmt_kst(dt: datetime | None) -> str:
