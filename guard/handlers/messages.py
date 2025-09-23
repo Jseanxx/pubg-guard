@@ -180,8 +180,12 @@ async def handle_message(
     if not tier and score >= int(rules.sensitivity.get("msg_threshold_normal", 60)):
         tier = "NORMAL"
 
+    # 4-1) 로깅 임계값 체크 (30점 미만이면 로깅 안함)
+    if not tier and score < 30:
+        return  # 로깅 없이 종료
+
     if not tier:
-        # 최소 로그만 (원하면 스킵 가능)
+        # 최소 로그만 (30점 이상 60점 미만)
         payload = LogPayload(
             guild_id=msg.guild.id,
             user_id=msg.author.id,
