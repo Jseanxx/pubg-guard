@@ -30,6 +30,24 @@ async def handle_message_qr(
     if not msg.attachments: return
     if not _channel_in_list(msg, cfg.channel_qr_monitor_ids): return
 
+    # 50일 윈도우 가드: 조인일자 체크 후 스캔 여부 결정
+    member = msg.author if isinstance(msg.author, discord.Member) else None
+    if (not member) and msg.guild:
+        try:
+            member = msg.guild.get_member(msg.author.id) or await msg.guild.fetch_member(msg.author.id)
+        except Exception:
+            member = None
+
+    do_scan = False
+    try:
+        if member and getattr(member, "joined_at", None):
+            do_scan = (now_utc() - member.joined_at) <= timedelta(days=cfg.window_days)
+    except Exception:
+        do_scan = False
+
+    if not do_scan:
+        return  # 50일 초과 유저는 QR 스캔 자체를 스킵
+
     for att in msg.attachments:
         if not is_scannable_attachment(att, cfg):
             continue
@@ -49,25 +67,8 @@ async def handle_message_qr(
         if not texts:
             continue
 
-        # 조인≤WINDOW_DAYS 일자 가드: 윈도우 밖이면 제재 스킵하고 로그만
-        member = msg.author if isinstance(msg.author, discord.Member) else None
-        if (not member) and msg.guild:
-            try:
-                member = msg.guild.get_member(msg.author.id) or await msg.guild.fetch_member(msg.author.id)
-            except Exception:
-                member = None
-
-        do_enforce = False
-        try:
-            if member and getattr(member, "joined_at", None):
-                do_enforce = (now_utc() - member.joined_at) <= timedelta(days=cfg.window_days)
-        except Exception:
-            do_enforce = False
-
-        if do_enforce:
-            effect = await apply_policy("QR", msg, tier=None, cfg=cfg, state=state)
-        else:
-            effect = "Log (old-member)"
+        # 50일 이내 유저만 여기 도달하므로 제재 적용
+        effect = await apply_policy("QR", msg, tier=None, cfg=cfg, state=state)
 
         payload = LogPayload(
             guild_id=msg.guild.id,

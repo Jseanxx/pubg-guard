@@ -127,6 +127,13 @@ async def handle_thread_create(
     if not _channel_in_list(thread, cfg.channel_qr_monitor_ids):
         return
 
+    # 50일 윈도우 가드: 스타터 메시지 작성자 조인일자 체크
+    starter_owner = await _resolve_owner(thread)
+    if not starter_owner:
+        return
+    if not _joined_within_days(starter_owner, cfg.window_days):
+        return  # 50일 초과 유저는 QR 스캔 자체를 스킵
+
     # 스타터 또는 첫 메시지 확보
     starter = None
     try:
@@ -151,19 +158,8 @@ async def handle_thread_create(
         if not texts:
             continue
 
-        # QR 정책 적용: 조인≤WINDOW_DAYS일 때만 제재, 아니면 로그만
-        do_enforce = False
-        try:
-            owner = await _resolve_owner(thread)
-            if owner and getattr(owner, "joined_at", None):
-                do_enforce = (now_utc() - owner.joined_at) <= timedelta(days=cfg.window_days)
-        except Exception:
-            do_enforce = False
-
-        if do_enforce:
-            effect = await apply_policy("QR", starter, tier=None, cfg=cfg, state=state)
-        else:
-            effect = "Log (old-member)"
+        # 50일 이내 유저만 여기 도달하므로 제재 적용
+        effect = await apply_policy("QR", starter, tier=None, cfg=cfg, state=state)
         payload = LogPayload(
             guild_id=thread.guild.id, user_id=starter.author.id, mention=starter.author.mention,
             channel_mention=getattr(thread.parent, "mention", None),
