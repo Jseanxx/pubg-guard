@@ -13,7 +13,7 @@ export MSG_EXEMPT_LOG_ONLY_IDS="590767390908743680"
 # --- 로그 채널 ---
 export LOG_QR_CHANNEL_ID="1095142986939109436"     # QR 메인
 export LOG_PHISH_CHANNEL_ID="1414799160837931028"  # 메시지/아바타 메인
-export LOG_SUB_CHANNEL_IDS=""   # 서브(선택): 메인 로그와 동일 알림을 서브 채널에도 동시 전송
+export LOG_SUB_CHANNEL_IDS="1416449915311231237"   # 서브(선택): 메인 로그와 동일 알림을 서브 채널에도 동시 전송
 
 # --- 윈도/정책/스위치 ---
 export WINDOW_DAYS="50"                 # 텍스트 정밀 감시: 조인 ≤ N일
